@@ -20,3 +20,7 @@ func (s *userService) GetUser(id int) (*domain.User, error) {
 func (s *userService) CreateUser(user *domain.User) error {
 	return s.repo.Save(user)
 }
+
+func (s *userService) ListUsers() ([]domain.User, error) {
+	return s.repo.GetAll()
+}

@@ -1,9 +1,9 @@
 package repository
 
 import (
-	"errors"
 	"bulls-lab-be/internal/core/domain"
 	"bulls-lab-be/internal/core/ports"
+	"errors"
 )
 
 type memRepo struct {
@@ -25,4 +25,12 @@ func (r *memRepo) GetByID(id int) (*domain.User, error) {
 func (r *memRepo) Save(user *domain.User) error {
 	r.users[user.ID] = user
 	return nil
+}
+
+func (r *memRepo) GetAll() ([]domain.User, error) {
+	var users []domain.User
+	for _, user := range r.users {
+		users = append(users, *user)
+	}
+	return users, nil
 }
