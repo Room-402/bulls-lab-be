@@ -1,6 +1,8 @@
 package ports
 
-import "bulls-lab-be/internal/core/domain"
+import (
+	"bulls-lab-be/internal/core/domain"
+)
 
 type UserRepository interface {
 	GetByID(id int) (*domain.User, error)

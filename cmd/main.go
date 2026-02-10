@@ -20,6 +20,9 @@ func main() {
 		panic(err)
 	}
 
+	// Register Global Audit Callbacks
+	repository.RegisterAuditCallbacks(db)
+
 	repo := repository.NewPostgresRepo(db)
 
 	// Initializing service
