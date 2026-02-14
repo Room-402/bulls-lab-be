@@ -1,0 +1,1 @@
+GOARCH=amd64 CGO_ENABLED=0 GOOS=linux go build -o bulls-lab-be bulls-lab-be/cmd/
