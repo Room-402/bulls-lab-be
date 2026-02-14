@@ -23,6 +23,7 @@ type UserRepository interface {
 // UserService defines business logic operations
 type UserService interface {
 	Register(ctx context.Context, req *domain.CreateUserRequest) (*domain.User, error)
+	Login(ctx context.Context, req *domain.LoginUserRequest) (*domain.User, error)
 	GetUser(ctx context.Context, id int) (*domain.User, error)
 	UpdateProfile(ctx context.Context, id int, req *domain.UpdateUserRequest) error
 	DeleteUser(ctx context.Context, id int) error
