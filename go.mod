@@ -5,7 +5,6 @@ go 1.24.5
 require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/golang-migrate/migrate/v4 v4.19.1
-	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.11.2
 	golang.org/x/crypto v0.48.0
 	gorm.io/driver/postgres v1.6.0
