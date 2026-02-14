@@ -4,7 +4,6 @@ import (
 	"bulls-lab-be/internal/adapters/handler"
 	"bulls-lab-be/internal/adapters/repository"
 	"bulls-lab-be/internal/core/services"
-	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -20,16 +19,19 @@ import (
 
 func main() {
 	// Run migrations first
-	if err := runMigrations(); err != nil {
-		log.Printf("⚠️  Migration warning: %v", err)
-	}
-
 	// Connect to database
 	db, err := ConnectDB()
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
+		if err := runMigrations(db); err != nil {
+		log.Printf("⚠️  Migration warning: %v", err)
+	}
+
+	
+	
+	
 	// Initialize repository
 	repo := repository.NewPostgresRepo(db)
 
@@ -100,23 +102,12 @@ func ConnectDB() (*gorm.DB, error) {
 	return db, nil
 }
 
-func runMigrations() error {
-	host := getEnv("DB_HOST", "localhost")
-	user := getEnv("DB_USER", "postgres")
-	password := getEnv("DB_PASSWORD", "postgres")
-	dbName := getEnv("DB_NAME", "bulls_lab")
-	port := getEnv("DB_PORT", "5432")
-
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		user, password, host, port, dbName)
-
-	db, err := sql.Open("postgres", connStr)
+func runMigrations(gormDB *gorm.DB) error {
+	sqlDB, err := gormDB.DB()
 	if err != nil {
-		return fmt.Errorf("failed to open database: %w", err)
+			return fmt.Errorf("failed to get sql.DB: %w", err)
 	}
-	defer db.Close()
-
-	driver, err := migrationPostgres.WithInstance(db, &migrationPostgres.Config{}) // ← Use alias
+	driver, err := migrationPostgres.WithInstance(sqlDB, &migrationPostgres.Config{}) // ← Use alias
 	if err != nil {
 		return fmt.Errorf("failed to create migration driver: %w", err)
 	}
