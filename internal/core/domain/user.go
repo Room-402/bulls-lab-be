@@ -7,34 +7,34 @@ import (
 
 // User represents a user in the system
 type User struct {
-	ID           int       `json:"id" db:"id"`
-	Active       bool      `json:"active" db:"active"`
-	FirstName    string    `json:"first_name" db:"first_name"`
-	LastName     string    `json:"last_name" db:"last_name"`
-	Email        string    `json:"email" db:"email"`
-	PasswordHash string    `json:"-" db:"password"`
-	PhoneNumber  string    `json:"phone_number" db:"phone_number"`
-	DateOfBirth  time.Time `json:"date_of_birth" db:"date_of_birth"`
-	CreatedAt    time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
+	ID          int       `json:"id" db:"id"`
+	Active      bool      `json:"active" db:"active"`
+	FirstName   string    `json:"first_name" db:"first_name"`
+	LastName    string    `json:"last_name" db:"last_name"`
+	Email       string    `json:"email" db:"email"`
+	Password    string    `json:"-" db:"password"`
+	PhoneNumber string    `json:"phone_number" db:"phone_number"`
+	DateOfBirth time.Time `json:"date_of_birth" db:"date_of_birth"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
 // NewUser creates a new user instance
-func NewUser(firstName, lastName, email, phoneNumber string, dob time.Time, passwordHash string) (*User, error) {
+func NewUser(firstName, lastName, email, phoneNumber string, dob time.Time, password string) (*User, error) {
 	if err := ValidateUserData(firstName, lastName, email, phoneNumber, dob); err != nil {
 		return nil, err
 	}
 
 	return &User{
-		Active:       true,
-		FirstName:    firstName,
-		LastName:     lastName,
-		Email:        email,
-		PasswordHash: passwordHash,
-		PhoneNumber:  phoneNumber,
-		DateOfBirth:  dob,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		Active:      true,
+		FirstName:   firstName,
+		LastName:    lastName,
+		Email:       email,
+		Password:    password,
+		PhoneNumber: phoneNumber,
+		DateOfBirth: dob,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}, nil
 }
 
@@ -91,8 +91,8 @@ func (u *User) UpdateProfile(firstName, lastName string) error {
 }
 
 // UpdatePassword updates user password hash
-func (u *User) UpdatePassword(passwordHash string) {
-	u.PasswordHash = passwordHash
+func (u *User) UpdatePassword(password string) {
+	u.Password = password
 	u.UpdatedAt = time.Now()
 }
 
