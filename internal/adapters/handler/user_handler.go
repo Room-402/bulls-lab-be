@@ -47,7 +47,37 @@ func (h *UserHandler) Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "User registered successfully",
 		"user":    user.ToResponse(),
-		"token":   token,
+		// "token":   token,
+	})
+}
+
+// Login authenticates a user
+func (h *UserHandler) Login(c *gin.Context) {
+	var req domain.LoginUserRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := h.service.Login(c.Request.Context(), &req)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, err := utils.GenerateToken(*user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cant generate bearer token"})
+		return
+	}
+
+	c.Header("Authorization", "Bearer "+token)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful",
+		"user":    user.ToResponse(),
+		// "token":   token,
 	})
 }
 

@@ -54,6 +54,7 @@ func main() {
 	// register api
 	publicUserApi := r.Group("/api/v1/users")
 	publicUserApi.POST("/register", userHandler.Register)
+	publicUserApi.POST("/login", userHandler.Login)
 
 	// Protected API routes
 	api := r.Group("/api/v1")
