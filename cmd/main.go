@@ -12,12 +12,18 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	migrationPostgres "github.com/golang-migrate/migrate/v4/database/postgres" // ← Aliased
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"gorm.io/driver/postgres" // ← No alias needed
 	"gorm.io/gorm"
 )
 
 func main() {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found or error loading it")
+	}
+
 	// Run migrations first
 	// Connect to database
 	db, err := ConnectDB()
@@ -45,12 +51,16 @@ func main() {
 	// Health check
 	r.GET("/health", healthHandler.HealthCheck)
 
-	// API routes
+	// register api
+	publicUserApi := r.Group("/api/v1/users")
+	publicUserApi.POST("/register", userHandler.Register)
+
+	// Protected API routes
 	api := r.Group("/api/v1")
+	api.Use(handler.AuthMiddleware())
 	{
 		users := api.Group("/users")
 		{
-			users.POST("/register", userHandler.Register)
 			users.GET("/:id", userHandler.GetUser)
 			users.PUT("/:id", userHandler.UpdateProfile)
 			users.DELETE("/:id", userHandler.DeleteUser)

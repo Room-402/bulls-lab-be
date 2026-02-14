@@ -31,7 +31,7 @@ func NewUser(firstName, lastName, email, phoneNumber string, dob time.Time, pass
 		LastName:     lastName,
 		Email:        email,
 		PasswordHash: passwordHash,
-		PhoneNumber: phoneNumber,
+		PhoneNumber:  phoneNumber,
 		DateOfBirth:  dob,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),

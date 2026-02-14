@@ -8,6 +8,7 @@ import (
 
 	"bulls-lab-be/internal/core/domain"
 	"bulls-lab-be/internal/core/ports"
+	"bulls-lab-be/pkg/utils"
 )
 
 type UserHandler struct {
@@ -35,9 +36,18 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
+	token, err := utils.GenerateToken(*user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cant generate bearer token"})
+		return
+	}
+
+	c.Header("Authorization", "Bearer "+token)
+
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "User registered successfully",
 		"user":    user.ToResponse(),
+		"token":   token,
 	})
 }
 
