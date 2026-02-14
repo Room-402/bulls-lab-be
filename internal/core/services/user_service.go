@@ -75,6 +75,34 @@ func (s *UserService) Register(ctx context.Context, req *domain.CreateUserReques
 	return user, nil
 }
 
+// Login authenticates a user
+func (s *UserService) Login(ctx context.Context, req *domain.LoginUserRequest) (*domain.User, error) {
+	var user *domain.User
+	var err error
+
+	if req.Email != "" {
+		user, err = s.repo.GetByEmail(ctx, req.Email)
+	} else if req.PhoneNumber != "" {
+		user, err = s.repo.GetByPhone(ctx, req.PhoneNumber)
+	} else {
+		return nil, errors.New("email or phone number required")
+	}
+
+	if err != nil {
+		return nil, errors.New("invalid credentials")
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+		return nil, errors.New("invalid credentials")
+	}
+
+	if !user.IsActive() {
+		return nil, errors.New("user account is inactive")
+	}
+
+	return user, nil
+}
+
 // GetUser retrieves a user by ID
 func (s *UserService) GetUser(ctx context.Context, id int) (*domain.User, error) { // Changed from uuid.UUID to int
 	user, err := s.repo.GetByID(ctx, id)
