@@ -6,20 +6,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
-
 	"bulls-lab-be/internal/core/domain"
 	"bulls-lab-be/internal/core/ports"
 )
 
 type memRepo struct {
-	users map[string]*domain.User // Use string for UUID key
-	mu    sync.RWMutex
+	users  map[int]*domain.User // Changed from map[string] to map[int]
+	nextID int                  // Added for auto-increment simulation
+	mu     sync.RWMutex
 }
 
 func NewMemRepo() ports.UserRepository {
 	return &memRepo{
-		users: make(map[string]*domain.User),
+		users:  make(map[int]*domain.User),
+		nextID: 1, // Start IDs from 1
 	}
 }
 
@@ -27,15 +27,19 @@ func (r *memRepo) Create(ctx context.Context, user *domain.User) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.users[user.ID.String()] = user
+	// Auto-generate ID (simulating SERIAL)
+	user.ID = r.nextID
+	r.nextID++
+
+	r.users[user.ID] = user
 	return nil
 }
 
-func (r *memRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
+func (r *memRepo) GetByID(ctx context.Context, id int) (*domain.User, error) { // Changed from uuid.UUID to int
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	user, exists := r.users[id.String()]
+	user, exists := r.users[id]
 	if !exists || !user.Active {
 		return nil, errors.New("user not found")
 	}
@@ -56,12 +60,12 @@ func (r *memRepo) GetByEmail(ctx context.Context, email string) (*domain.User, e
 	return nil, errors.New("user not found")
 }
 
-func (r *memRepo) GetByMobile(ctx context.Context, mobile string) (*domain.User, error) {
+func (r *memRepo) GetByPhone(ctx context.Context, phone string) (*domain.User, error) { // Renamed from GetByPhone
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	for _, user := range r.users {
-		if user.MobileNumber == mobile && user.Active {
+		if user.PhoneNumber == phone && user.Active { // Changed from PhoneNumber to PhoneNumber
 			return user, nil
 		}
 	}
@@ -73,20 +77,20 @@ func (r *memRepo) Update(ctx context.Context, user *domain.User) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if _, exists := r.users[user.ID.String()]; !exists {
+	if _, exists := r.users[user.ID]; !exists { // No longer need .String()
 		return errors.New("user not found")
 	}
 
 	user.UpdatedAt = time.Now()
-	r.users[user.ID.String()] = user
+	r.users[user.ID] = user
 	return nil
 }
 
-func (r *memRepo) SoftDelete(ctx context.Context, id uuid.UUID) error {
+func (r *memRepo) SoftDelete(ctx context.Context, id int) error { // Changed from uuid.UUID to int
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	user, exists := r.users[id.String()]
+	user, exists := r.users[id]
 	if !exists {
 		return errors.New("user not found")
 	}
@@ -95,11 +99,11 @@ func (r *memRepo) SoftDelete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (r *memRepo) Restore(ctx context.Context, id uuid.UUID) error {
+func (r *memRepo) Restore(ctx context.Context, id int) error { // Changed from uuid.UUID to int
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	user, exists := r.users[id.String()]
+	user, exists := r.users[id]
 	if !exists {
 		return errors.New("user not found")
 	}
@@ -147,12 +151,12 @@ func (r *memRepo) EmailExists(ctx context.Context, email string) (bool, error) {
 	return false, nil
 }
 
-func (r *memRepo) MobileExists(ctx context.Context, mobile string) (bool, error) {
+func (r *memRepo) PhoneExists(ctx context.Context, phone string) (bool, error) { // Renamed from PhoneExists
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	for _, user := range r.users {
-		if user.MobileNumber == mobile {
+		if user.PhoneNumber == phone { // Changed from PhoneNumber to PhoneNumber
 			return true, nil
 		}
 	}

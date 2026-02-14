@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 
 	"bulls-lab-be/internal/core/domain"
@@ -25,7 +24,7 @@ func (r *postgresRepo) Create(ctx context.Context, user *domain.User) error {
 	return r.db.WithContext(ctx).Create(user).Error
 }
 
-func (r *postgresRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
+func (r *postgresRepo) GetByID(ctx context.Context, id int) (*domain.User, error) { // Changed from uuid.UUID to int
 	var user domain.User
 	err := r.db.WithContext(ctx).
 		Where("id = ? AND active = ?", id, true).
@@ -57,10 +56,10 @@ func (r *postgresRepo) GetByEmail(ctx context.Context, email string) (*domain.Us
 	return &user, nil
 }
 
-func (r *postgresRepo) GetByMobile(ctx context.Context, mobile string) (*domain.User, error) {
+func (r *postgresRepo) GetByPhone(ctx context.Context, phone string) (*domain.User, error) { // Renamed from GetByPhone
 	var user domain.User
 	err := r.db.WithContext(ctx).
-		Where("mobile_number = ? AND active = ?", mobile, true).
+		Where("phone_number = ? AND active = ?", phone, true). // Changed from phone_number to phone_number
 		First(&user).Error
 
 	if err != nil {
@@ -77,7 +76,7 @@ func (r *postgresRepo) Update(ctx context.Context, user *domain.User) error {
 	return r.db.WithContext(ctx).Save(user).Error
 }
 
-func (r *postgresRepo) SoftDelete(ctx context.Context, id uuid.UUID) error {
+func (r *postgresRepo) SoftDelete(ctx context.Context, id int) error { // Changed from uuid.UUID to int
 	result := r.db.WithContext(ctx).
 		Model(&domain.User{}).
 		Where("id = ?", id).
@@ -94,7 +93,7 @@ func (r *postgresRepo) SoftDelete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (r *postgresRepo) Restore(ctx context.Context, id uuid.UUID) error {
+func (r *postgresRepo) Restore(ctx context.Context, id int) error { // Changed from uuid.UUID to int
 	result := r.db.WithContext(ctx).
 		Model(&domain.User{}).
 		Where("id = ?", id).
@@ -143,12 +142,12 @@ func (r *postgresRepo) EmailExists(ctx context.Context, email string) (bool, err
 	return count > 0, nil
 }
 
-func (r *postgresRepo) MobileExists(ctx context.Context, mobile string) (bool, error) {
+func (r *postgresRepo) PhoneExists(ctx context.Context, phone string) (bool, error) { // Renamed from PhoneExists
 	var count int64
 
 	err := r.db.WithContext(ctx).
 		Model(&domain.User{}).
-		Where("mobile_number = ?", mobile).
+		Where("phone_number = ?", phone). // Changed from phone_number to phone_number
 		Count(&count).Error
 
 	if err != nil {

@@ -3,38 +3,35 @@ package domain
 import (
 	"errors"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 // User represents a user in the system
 type User struct {
-	ID           uuid.UUID `json:"id" db:"id"`
+	ID           int       `json:"id" db:"id"`
 	Active       bool      `json:"active" db:"active"`
 	FirstName    string    `json:"first_name" db:"first_name"`
 	LastName     string    `json:"last_name" db:"last_name"`
 	Email        string    `json:"email" db:"email"`
 	PasswordHash string    `json:"-" db:"password"`
-	MobileNumber string    `json:"mobile_number" db:"mobile_number"`
+	PhoneNumber  string    `json:"phone_number" db:"phone_number"`
 	DateOfBirth  time.Time `json:"date_of_birth" db:"date_of_birth"`
 	CreatedAt    time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
 }
 
 // NewUser creates a new user instance
-func NewUser(firstName, lastName, email, mobileNumber string, dob time.Time, passwordHash string) (*User, error) {
-	if err := ValidateUserData(firstName, lastName, email, mobileNumber, dob); err != nil {
+func NewUser(firstName, lastName, email, phoneNumber string, dob time.Time, passwordHash string) (*User, error) {
+	if err := ValidateUserData(firstName, lastName, email, phoneNumber, dob); err != nil {
 		return nil, err
 	}
 
 	return &User{
-		ID:           uuid.New(),
 		Active:       true,
 		FirstName:    firstName,
 		LastName:     lastName,
 		Email:        email,
 		PasswordHash: passwordHash,
-		MobileNumber: mobileNumber,
+		PhoneNumber: phoneNumber,
 		DateOfBirth:  dob,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),

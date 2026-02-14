@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
 	"bulls-lab-be/internal/core/domain"
@@ -34,13 +33,13 @@ func (s *UserService) Register(ctx context.Context, req *domain.CreateUserReques
 		return nil, errors.New("email already registered")
 	}
 
-	// Check if mobile already exists
-	exists, err = s.repo.MobileExists(ctx, req.MobileNumber)
+	// Check if phone already exists
+	exists, err = s.repo.PhoneExists(ctx, req.PhoneNumber) // Changed from PhoneExists to PhoneExists, PhoneNumber to PhoneNumber
 	if err != nil {
-		return nil, fmt.Errorf("failed to check mobile existence: %w", err)
+		return nil, fmt.Errorf("failed to check phone existence: %w", err)
 	}
 	if exists {
-		return nil, errors.New("mobile number already registered")
+		return nil, errors.New("phone number already registered")
 	}
 
 	// Parse date of birth
@@ -60,7 +59,7 @@ func (s *UserService) Register(ctx context.Context, req *domain.CreateUserReques
 		req.FirstName,
 		req.LastName,
 		req.Email,
-		req.MobileNumber,
+		req.PhoneNumber, // Changed from PhoneNumber to PhoneNumber
 		dob,
 		string(hashedPassword),
 	)
@@ -77,7 +76,7 @@ func (s *UserService) Register(ctx context.Context, req *domain.CreateUserReques
 }
 
 // GetUser retrieves a user by ID
-func (s *UserService) GetUser(ctx context.Context, id uuid.UUID) (*domain.User, error) {
+func (s *UserService) GetUser(ctx context.Context, id int) (*domain.User, error) { // Changed from uuid.UUID to int
 	user, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
@@ -97,7 +96,7 @@ func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*domain
 }
 
 // UpdateProfile updates user profile information
-func (s *UserService) UpdateProfile(ctx context.Context, id uuid.UUID, req *domain.UpdateUserRequest) error {
+func (s *UserService) UpdateProfile(ctx context.Context, id int, req *domain.UpdateUserRequest) error { // Changed from uuid.UUID to int
 	user, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to get user: %w", err)
@@ -115,7 +114,7 @@ func (s *UserService) UpdateProfile(ctx context.Context, id uuid.UUID, req *doma
 }
 
 // DeleteUser soft deletes a user
-func (s *UserService) DeleteUser(ctx context.Context, id uuid.UUID) error {
+func (s *UserService) DeleteUser(ctx context.Context, id int) error { // Changed from uuid.UUID to int
 	if err := s.repo.SoftDelete(ctx, id); err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}
@@ -124,7 +123,7 @@ func (s *UserService) DeleteUser(ctx context.Context, id uuid.UUID) error {
 }
 
 // RestoreUser restores a soft-deleted user
-func (s *UserService) RestoreUser(ctx context.Context, id uuid.UUID) error {
+func (s *UserService) RestoreUser(ctx context.Context, id int) error { // Changed from uuid.UUID to int
 	if err := s.repo.Restore(ctx, id); err != nil {
 		return fmt.Errorf("failed to restore user: %w", err)
 	}

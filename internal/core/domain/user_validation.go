@@ -7,15 +7,15 @@ import (
 )
 
 var (
-	ErrInvalidEmail  = errors.New("invalid email format")
-	ErrInvalidMobile = errors.New("invalid Indian mobile number format (must be 10 digits starting with 6-9)")
-	ErrInvalidAge    = errors.New("user must be 18 years or older")
-	ErrInvalidName   = errors.New("name cannot be empty")
-	ErrNameTooLong   = errors.New("name is too long (max 100 characters)")
+	ErrInvalidEmail = errors.New("invalid email format")
+	ErrInvalidPhone = errors.New("invalid Indian phone number format (must be 10 digits starting with 6-9)")
+	ErrInvalidAge   = errors.New("user must be 18 years or older")
+	ErrInvalidName  = errors.New("name cannot be empty")
+	ErrNameTooLong  = errors.New("name is too long (max 100 characters)")
 )
 
 // ValidateUserData validates user input data
-func ValidateUserData(firstName, lastName, email, mobileNumber string, dob time.Time) error {
+func ValidateUserData(firstName, lastName, email, phoneNumber string, dob time.Time) error {
 	if err := ValidateName(firstName); err != nil {
 		return err
 	}
@@ -28,7 +28,7 @@ func ValidateUserData(firstName, lastName, email, mobileNumber string, dob time.
 		return err
 	}
 
-	if err := ValidateIndianMobile(mobileNumber); err != nil {
+	if err := ValidateIndianPhone(phoneNumber); err != nil {
 		return err
 	}
 
@@ -68,17 +68,17 @@ func ValidateEmail(email string) error {
 	return nil
 }
 
-// ValidateIndianMobile validates Indian mobile number
-func ValidateIndianMobile(mobile string) error {
-	if mobile == "" {
-		return ErrInvalidMobile
+// ValidateIndianPhone validates Indian phone number
+func ValidateIndianPhone(phone string) error {
+	if phone == "" {
+		return ErrInvalidPhone
 	}
 
 	pattern := `^[6-9]\d{9}$`
-	matched, _ := regexp.MatchString(pattern, mobile)
+	matched, _ := regexp.MatchString(pattern, phone)
 
 	if !matched {
-		return ErrInvalidMobile
+		return ErrInvalidPhone
 	}
 
 	return nil

@@ -2,9 +2,9 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 
 	"bulls-lab-be/internal/core/domain"
 	"bulls-lab-be/internal/core/ports"
@@ -44,7 +44,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 // GetUser retrieves a user by ID
 func (h *UserHandler) GetUser(c *gin.Context) {
 	idParam := c.Param("id")
-	id, err := uuid.Parse(idParam)
+	id, err := strconv.Atoi(idParam) // Changed from uuid.Parse to strconv.Atoi
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
 		return
@@ -64,7 +64,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 // UpdateProfile updates user profile
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	idParam := c.Param("id")
-	id, err := uuid.Parse(idParam)
+	id, err := strconv.Atoi(idParam) // Changed from uuid.Parse to strconv.Atoi
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
 		return
@@ -89,7 +89,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 // DeleteUser soft deletes a user
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	idParam := c.Param("id")
-	id, err := uuid.Parse(idParam)
+	id, err := strconv.Atoi(idParam) // Changed from uuid.Parse to strconv.Atoi
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
 		return
@@ -107,13 +107,9 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 // ListUsers retrieves all users with pagination
 func (h *UserHandler) ListUsers(c *gin.Context) {
-	// Default pagination
-	limit := 10
-	offset := 0
-
-	// You can add query params for pagination if needed
-	// limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	// offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	// Get pagination params from query string
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 
 	users, err := h.service.ListUsers(c.Request.Context(), limit, offset)
 	if err != nil {
