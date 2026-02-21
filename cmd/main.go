@@ -1,6 +1,10 @@
 package main
 
 import (
+	"time"
+
+	"github.com/gin-contrib/cors"
+
 	"bulls-lab-be/internal/adapters/handler"
 	"bulls-lab-be/internal/adapters/repository"
 	"bulls-lab-be/internal/core/services"
@@ -47,6 +51,15 @@ func main() {
 
 	// Setup Gin router
 	r := gin.Default()
+
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173", "http://your-frontend-domain.com"}, // Update with your frontend's URL
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length", "authorization"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	// Health check
 	r.GET("/health", healthHandler.HealthCheck)
