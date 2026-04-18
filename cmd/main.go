@@ -41,13 +41,16 @@ func main() {
 
 	// Initialize repository
 	repo := repository.NewPostgresRepo(db)
+	orderRepo := repository.NewOrderRepository(db)
 
 	// Initialize service
 	service := services.NewUserService(repo)
+	orderService := services.NewOrderService(orderRepo)
 
 	// Initialize handlers
 	userHandler := handler.NewUserHandler(service)
 	healthHandler := handler.NewHealthHandler()
+	orderHandler := handler.NewOrderHandler(orderService)
 
 	// Setup Gin router
 	r := gin.Default()
@@ -79,6 +82,10 @@ func main() {
 			users.PUT("/:id", userHandler.UpdateProfile)
 			users.DELETE("/:id", userHandler.DeleteUser)
 			users.GET("", userHandler.ListUsers)
+		}
+		orders := api.Group("/orders")
+		{
+			orders.POST("/create", orderHandler.CreateOrder)
 		}
 	}
 
