@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS orders (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id),
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     stock_ticker VARCHAR(100) NOT NULL,
     order_type VARCHAR(100) NOT NULL,
     order_category VARCHAR(100) NOT NULL,
