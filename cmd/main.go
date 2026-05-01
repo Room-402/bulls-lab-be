@@ -61,8 +61,25 @@ func main() {
 	orderHandler := handler.NewOrderHandler(orderService)
 
 	// Initialize and start Cron Scheduler
-	scheduler := setupCron()
-	defer scheduler.Stop()
+	cronScheduler := cron.NewScheduler()
+
+	// Register Jobs
+	// Cron format: Second | Minute | Hour | Day of Month | Month | Day of Week
+	
+	heartbeatJob := jobs.NewHeartbeatJob()
+	// Runs every minute at second 0
+	if _, err := cronScheduler.RegisterJob("0 * * * * *", heartbeatJob); err != nil {
+		log.Printf("⚠️  Failed to register heartbeat job: %v", err)
+	}
+
+	cancelExpiredOrdersJob := jobs.NewCancelExpiredOrdersJob(orderService)
+	// Runs daily at 15:35:00
+	if _, err := cronScheduler.RegisterJob("0 35 15 * * *", cancelExpiredOrdersJob); err != nil {
+		log.Printf("⚠️  Failed to register cancel expired orders job: %v", err)
+	}
+
+	cronScheduler.Start()
+	defer cronScheduler.Stop()
 
 	r := gin.Default()
 
@@ -178,22 +195,4 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
-}
-
-func setupCron() *cron.Scheduler {
-	s := cron.NewScheduler()
-
-	// Register Heartbeat Job
-	heartbeatJob := jobs.NewHeartbeatJob()
-	if _, err := s.RegisterJob("0 * * * * *", heartbeatJob); err != nil {
-		log.Printf("⚠️  Failed to register heartbeat job: %v", err)
-	}
-
-	// You can easily add more jobs here:
-	// exampleJob := jobs.NewExampleJob(someService)
-	// s.RegisterJob("0 0 * * * *", exampleJob)
-
-	s.Start()
-	log.Println("⏰ Cron scheduler initialized and started")
-	return s
 }
