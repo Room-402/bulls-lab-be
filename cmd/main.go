@@ -10,6 +10,7 @@ import (
 	"bulls-lab-be/internal/core/services"
 	"bulls-lab-be/internal/adapters/cron"
 	"bulls-lab-be/internal/adapters/cron/jobs"
+	"bulls-lab-be/internal/core/ports"
 	"fmt"
 	"log"
 	"os"
@@ -61,7 +62,7 @@ func main() {
 	orderHandler := handler.NewOrderHandler(orderService)
 
 	// Initialize and start Cron Scheduler
-	scheduler := setupCron()
+	scheduler := setupCron(orderService)
 	defer scheduler.Stop()
 
 	r := gin.Default()
@@ -180,7 +181,7 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
-func setupCron() *cron.Scheduler {
+func setupCron(orderService ports.OrderService) *cron.Scheduler {
 	s := cron.NewScheduler()
 
 	// Register Heartbeat Job
@@ -189,9 +190,11 @@ func setupCron() *cron.Scheduler {
 		log.Printf("⚠️  Failed to register heartbeat job: %v", err)
 	}
 
-	// You can easily add more jobs here:
-	// exampleJob := jobs.NewExampleJob(someService)
-	// s.RegisterJob("0 0 * * * *", exampleJob)
+	// Register Limit Order Executor Job - runs every 30 seconds
+	limitOrderJob := jobs.NewLimitOrderJob(orderService)
+	if _, err := s.RegisterJob("*/30 * * * * *", limitOrderJob); err != nil {
+		log.Printf("⚠️  Failed to register limit order job: %v", err)
+	}
 
 	s.Start()
 	log.Println("⏰ Cron scheduler initialized and started")

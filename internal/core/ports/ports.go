@@ -33,10 +33,13 @@ type UserService interface {
 type OrderRepository interface {
 	Create(ctx context.Context, req *domain.Order) error
 	ExecuteOrder(ctx context.Context, req *domain.Order) error
+	GetPendingLimitOrders(ctx context.Context) ([]*domain.Order, error)
 }
 
 type OrderService interface {
 	CreateOrder(ctx context.Context, req *domain.CreateOrderRequest) (*domain.Order, error)
+	GetPendingLimitOrders(ctx context.Context) ([]*domain.Order, error)
+	ExecuteOrder(ctx context.Context, order *domain.Order) error
 }
 
 type WatchlistRepository interface {
