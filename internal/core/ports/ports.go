@@ -30,6 +30,15 @@ type UserService interface {
 	ListUsers(ctx context.Context, limit, offset int) ([]*domain.User, error)
 }
 
+type OrderRepository interface {
+	Create(ctx context.Context, req *domain.Order) error
+	ExecuteOrder(ctx context.Context, req *domain.Order) error
+}
+
+type OrderService interface {
+	CreateOrder(ctx context.Context, req *domain.CreateOrderRequest) (*domain.Order, error)
+}
+
 type WatchlistRepository interface {
 	Create(ctx context.Context, watchlist *domain.Watchlist) error
 	GetByID(ctx context.Context, id int) (*domain.Watchlist, error)

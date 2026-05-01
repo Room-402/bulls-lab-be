@@ -48,7 +48,15 @@ func main() {
 	// Handlers
 	userHandler := handler.NewUserHandler(userService)
 	watchlistHandler := handler.NewWatchlistHandler(watchlistService)
+	// Initialize repository
+	orderRepo := repository.NewOrderRepository(db)
+
+	// Initialize service
+	orderService := services.NewOrderService(orderRepo)
+
+	// Initialize handlers
 	healthHandler := handler.NewHealthHandler()
+	orderHandler := handler.NewOrderHandler(orderService)
 
 	r := gin.Default()
 
@@ -76,6 +84,10 @@ func main() {
 			users.PUT("/:id", userHandler.UpdateProfile)
 			users.DELETE("/:id", userHandler.DeleteUser)
 			users.GET("", userHandler.ListUsers)
+		}
+		orders := api.Group("/orders")
+		{
+			orders.POST("/create", orderHandler.CreateOrder)
 		}
 
 		watchlists := api.Group("/watchlists")
