@@ -9,15 +9,15 @@ import (
 // UserRepository defines the interface for user data access
 type UserRepository interface {
 	Create(ctx context.Context, user *domain.User) error
-	GetByID(ctx context.Context, id int) (*domain.User, error) // Changed from uuid.UUID to int
+	GetByID(ctx context.Context, id int) (*domain.User, error)
 	GetByEmail(ctx context.Context, email string) (*domain.User, error)
-	GetByPhone(ctx context.Context, phone string) (*domain.User, error) // Renamed from GetByPhone
+	GetByPhone(ctx context.Context, phone string) (*domain.User, error)
 	Update(ctx context.Context, user *domain.User) error
-	SoftDelete(ctx context.Context, id int) error // Changed from uuid.UUID to int
-	Restore(ctx context.Context, id int) error    // Changed from uuid.UUID to int
+	SoftDelete(ctx context.Context, id int) error
+	Restore(ctx context.Context, id int) error
 	List(ctx context.Context, limit, offset int) ([]*domain.User, error)
 	EmailExists(ctx context.Context, email string) (bool, error)
-	PhoneExists(ctx context.Context, phone string) (bool, error) // Renamed from PhoneExists
+	PhoneExists(ctx context.Context, phone string) (bool, error)
 }
 
 // UserService defines business logic operations
@@ -37,4 +37,28 @@ type OrderRepository interface {
 
 type OrderService interface {
 	CreateOrder(ctx context.Context, req *domain.CreateOrderRequest) (*domain.Order, error)
+}
+
+type WatchlistRepository interface {
+	Create(ctx context.Context, watchlist *domain.Watchlist) error
+	GetByID(ctx context.Context, id int) (*domain.Watchlist, error)
+	GetByUserID(ctx context.Context, userID int) ([]*domain.Watchlist, error)
+	Update(ctx context.Context, watchlist *domain.Watchlist) error
+	Delete(ctx context.Context, id int) error
+}
+
+type WatchlistStockRepository interface {
+	Add(ctx context.Context, stock *domain.WatchlistStock) error
+	GetByWatchlistID(ctx context.Context, watchlistID int) ([]*domain.WatchlistStock, error)
+	GetByTickerAndWatchlist(ctx context.Context, watchlistID int, ticker string) (*domain.WatchlistStock, error)
+	UpdateActive(ctx context.Context, id int, active bool) error
+}
+
+type WatchlistService interface {
+	CreateWatchlist(ctx context.Context, userID int, req *domain.CreateWatchlistRequest) (*domain.Watchlist, error)
+	GetWatchlists(ctx context.Context, userID int) ([]*domain.WatchlistWithStocks, error)
+	UpdateWatchlist(ctx context.Context, id int, userID int, req *domain.UpdateWatchlistRequest) (*domain.Watchlist, error)
+	DeleteWatchlist(ctx context.Context, id int, userID int) error
+	AddStock(ctx context.Context, watchlistID int, userID int, req *domain.AddStockRequest) (*domain.WatchlistStock, error)
+	RemoveStock(ctx context.Context, watchlistID int, userID int, req *domain.RemoveStockRequest) error
 }
