@@ -5,11 +5,13 @@ import (
 
 	"github.com/gin-contrib/cors"
 
-	"bulls-lab-be/internal/adapters/handler"
-	"bulls-lab-be/internal/adapters/repository"
-	"bulls-lab-be/internal/core/services"
+	"bulls-lab-be/constants"
 	"bulls-lab-be/internal/adapters/cron"
 	"bulls-lab-be/internal/adapters/cron/jobs"
+	"bulls-lab-be/internal/adapters/handler"
+	"bulls-lab-be/internal/adapters/market"
+	"bulls-lab-be/internal/adapters/repository"
+	"bulls-lab-be/internal/core/services"
 	"fmt"
 	"log"
 	"os"
@@ -53,8 +55,11 @@ func main() {
 	// Initialize repository
 	orderRepo := repository.NewOrderRepository(db)
 
+	// Initialize Market Service
+	marketClient := market.NewMarketClient(constants.MARKET_SERVICE_URL)
+
 	// Initialize service
-	orderService := services.NewOrderService(orderRepo)
+	orderService := services.NewOrderService(orderRepo, marketClient)
 
 	// Initialize handlers
 	healthHandler := handler.NewHealthHandler()
@@ -65,7 +70,7 @@ func main() {
 
 	// Register Jobs
 	// Cron format: Second | Minute | Hour | Day of Month | Month | Day of Week
-	
+
 	heartbeatJob := jobs.NewHeartbeatJob()
 	// Runs every minute at second 0
 	if _, err := cronScheduler.RegisterJob("0 * * * * *", heartbeatJob); err != nil {
@@ -76,6 +81,12 @@ func main() {
 	// Runs daily at 15:35:00
 	if _, err := cronScheduler.RegisterJob("0 35 15 * * *", cancelExpiredOrdersJob); err != nil {
 		log.Printf("⚠️  Failed to register cancel expired orders job: %v", err)
+	}
+
+	// Register Limit Order Executor Job - runs every 30 seconds
+	limitOrderJob := jobs.NewLimitOrderJob(orderService, marketClient)
+	if _, err := cronScheduler.RegisterJob("*/30 * * * * *", limitOrderJob); err != nil {
+		log.Printf("⚠️  Failed to register limit order job: %v", err)
 	}
 
 	cronScheduler.Start()

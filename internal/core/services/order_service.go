@@ -10,11 +10,13 @@ import (
 
 type OrderService struct {
 	repo ports.OrderRepository
+	marketService ports.MarketService
 }
 
-func NewOrderService(repo ports.OrderRepository) *OrderService {
+func NewOrderService(repo ports.OrderRepository, marketService ports.MarketService) *OrderService {
 	return &OrderService{
 		repo: repo,
+		marketService: marketService,
 	}
 }
 
@@ -26,7 +28,6 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *domain.CreateOrderR
 		expiryDate = time.Date(now.Year(), now.Month(), now.Day(), 15, 30, 0, 0, now.Location()).AddDate(1, 0, 0)
 	} else {
 		expiryDate = time.Date(now.Year(), now.Month(), now.Day(), 15, 30, 0, 0, now.Location())
-
 	}
 
 	order := &domain.Order{
@@ -43,24 +44,27 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *domain.CreateOrderR
 		ExecutionType: req.ExecutionType,
 		ExpiresAt:     expiryDate,
 	}
+	
 	if err := s.repo.Create(ctx, order); err != nil {
 		return nil, err
 	}
 
-	if req.OrderCategory != constants.STOP_LOSS_ORDER_CATEGORY {
-
-		if order.ExecutionType == constants.EXECUTION_TYPE_MARKET {
-			if err := s.repo.ExecuteOrder(ctx, order); err != nil {
-				return nil, err
-			}
-		} else {
-			// write logic for limit
+	if order.ExecutionType == constants.EXECUTION_TYPE_MARKET {
+		// Market orders execute immediately
+		if err := s.repo.ExecuteOrder(ctx, order); err != nil {
+			return nil, err
 		}
-		return order, nil
-	} else {
-		// add logic for stop loss
 	}
+	
 	return order, nil
+}
+
+func (s *OrderService) GetPendingLimitOrders(ctx context.Context) ([]*domain.Order, error) {
+	return s.repo.GetPendingLimitOrders(ctx)
+}
+
+func (s *OrderService) ExecuteOrder(ctx context.Context, order *domain.Order) error {
+	return s.repo.ExecuteOrder(ctx, order)
 }
 
 func (s *OrderService) CancelExpiredOrders(ctx context.Context) (int64, error) {

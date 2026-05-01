@@ -14,4 +14,6 @@ const (
 
 	EXECUTION_TYPE_MARKET = "MARKET"
 	EXECUTION_TYPE_LIMIT  = "LIMIT"
+
+	MARKET_SERVICE_URL = "http://localhost:8000"
 )

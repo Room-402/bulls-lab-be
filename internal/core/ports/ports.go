@@ -34,11 +34,14 @@ type UserService interface {
 type OrderRepository interface {
 	Create(ctx context.Context, req *domain.Order) error
 	ExecuteOrder(ctx context.Context, req *domain.Order) error
+	GetPendingLimitOrders(ctx context.Context) ([]*domain.Order, error)
 	BatchCancelExpiredOrders(ctx context.Context, status string, cancelledStatus string, now time.Time) (int64, error)
 }
 
 type OrderService interface {
 	CreateOrder(ctx context.Context, req *domain.CreateOrderRequest) (*domain.Order, error)
+	GetPendingLimitOrders(ctx context.Context) ([]*domain.Order, error)
+	ExecuteOrder(ctx context.Context, order *domain.Order) error
 	CancelExpiredOrders(ctx context.Context) (int64, error)
 }
 
@@ -64,4 +67,8 @@ type WatchlistService interface {
 	DeleteWatchlist(ctx context.Context, id int, userID int) error
 	AddStock(ctx context.Context, watchlistID int, userID int, req *domain.AddStockRequest) (*domain.WatchlistStock, error)
 	RemoveStock(ctx context.Context, watchlistID int, userID int, req *domain.RemoveStockRequest) error
+}
+
+type MarketService interface {
+	GetStockPrice(ctx context.Context, ticker string) (float64, error)
 }
