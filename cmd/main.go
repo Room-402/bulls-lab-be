@@ -49,15 +49,12 @@ func main() {
 	userHandler := handler.NewUserHandler(userService)
 	watchlistHandler := handler.NewWatchlistHandler(watchlistService)
 	// Initialize repository
-	repo := repository.NewPostgresRepo(db)
 	orderRepo := repository.NewOrderRepository(db)
 
 	// Initialize service
-	service := services.NewUserService(repo)
 	orderService := services.NewOrderService(orderRepo)
 
 	// Initialize handlers
-	userHandler := handler.NewUserHandler(service)
 	healthHandler := handler.NewHealthHandler()
 	orderHandler := handler.NewOrderHandler(orderService)
 
