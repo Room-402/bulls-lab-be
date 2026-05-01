@@ -10,11 +10,13 @@ import (
 
 type OrderService struct {
 	repo ports.OrderRepository
+	marketService ports.MarketService
 }
 
-func NewOrderService(repo ports.OrderRepository) *OrderService {
+func NewOrderService(repo ports.OrderRepository, marketService ports.MarketService) *OrderService {
 	return &OrderService{
 		repo: repo,
+		marketService: marketService,
 	}
 }
 

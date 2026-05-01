@@ -68,3 +68,7 @@ type WatchlistService interface {
 	AddStock(ctx context.Context, watchlistID int, userID int, req *domain.AddStockRequest) (*domain.WatchlistStock, error)
 	RemoveStock(ctx context.Context, watchlistID int, userID int, req *domain.RemoveStockRequest) error
 }
+
+type MarketService interface {
+	GetStockPrice(ctx context.Context, ticker string) (float64, error)
+}

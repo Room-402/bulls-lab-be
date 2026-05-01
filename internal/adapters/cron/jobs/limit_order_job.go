@@ -4,26 +4,18 @@ import (
 	"bulls-lab-be/constants"
 	"bulls-lab-be/internal/core/ports"
 	"context"
-	"encoding/json"
-	"fmt"
 	"log"
-	"net/http"
-	"time"
 )
 
 type LimitOrderJob struct {
 	orderService ports.OrderService
+	marketService ports.MarketService
 }
 
-type MarketPriceResponse struct {
-	StockDetails struct {
-		Price float64 `json:"price"`
-	} `json:"stock_details"`
-}
-
-func NewLimitOrderJob(orderService ports.OrderService) *LimitOrderJob {
+func NewLimitOrderJob(orderService ports.OrderService, marketService ports.MarketService) *LimitOrderJob {
 	return &LimitOrderJob{
 		orderService: orderService,
+		marketService: marketService,
 	}
 }
 
@@ -52,7 +44,7 @@ func (j *LimitOrderJob) Run() {
 
 	for _, order := range orders {
 		if _, ok := tickerPrices[order.StockTicker]; !ok {
-			price, err := j.fetchCurrentPrice(order.StockTicker)
+			price, err := j.marketService.GetStockPrice(ctx, order.StockTicker)
 			if err != nil {
 				log.Printf("⚠️ [LimitOrderJob] Failed to fetch price for %s: %v", order.StockTicker, err)
 				continue
@@ -88,26 +80,4 @@ func (j *LimitOrderJob) Run() {
 			}
 		}
 	}
-}
-
-func (j *LimitOrderJob) fetchCurrentPrice(ticker string) (float64, error) {
-	url := fmt.Sprintf("%s/api/v1/stocks/get_stock_details?symbol=%s", constants.MARKET_SERVICE_URL, ticker)
-
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get(url)
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("market service returned status %d", resp.StatusCode)
-	}
-
-	var data MarketPriceResponse
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		return 0, err
-	}
-
-	return data.StockDetails.Price, nil
 }
