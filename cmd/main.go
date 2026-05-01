@@ -122,6 +122,7 @@ func main() {
 		orders := api.Group("/orders")
 		{
 			orders.POST("/create", orderHandler.CreateOrder)
+			orders.GET("", orderHandler.GetOrdersByTab)
 		}
 
 		watchlists := api.Group("/watchlists")

@@ -21,7 +21,7 @@ type Order struct {
 }
 
 type CreateOrderRequest struct {
-	UserId        int     `json:"user_id" binding:"required"`
+	UserId        int     `json:"user_id"`
 	StockTicker   string  `json:"stock_ticker" binding:"required"`
 	OrderType     string  `json:"order_type" binding:"required"`
 	OrderCategory string  `json:"order_category" binding:"required"`
@@ -30,4 +30,5 @@ type CreateOrderRequest struct {
 	Quantity      int     `json:"quantity" binding:"required,gt=0"`
 	Price         float64 `json:"price"`
 	TriggerPrice  float64 `json:"trigger_price"`
+	StopLossPrice float64 `json:"stop_loss_price"`
 }
