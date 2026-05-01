@@ -8,6 +8,8 @@ import (
 	"bulls-lab-be/internal/adapters/handler"
 	"bulls-lab-be/internal/adapters/repository"
 	"bulls-lab-be/internal/core/services"
+	"bulls-lab-be/internal/adapters/cron"
+	"bulls-lab-be/internal/adapters/cron/jobs"
 	"fmt"
 	"log"
 	"os"
@@ -49,6 +51,10 @@ func main() {
 	userHandler := handler.NewUserHandler(userService)
 	watchlistHandler := handler.NewWatchlistHandler(watchlistService)
 	healthHandler := handler.NewHealthHandler()
+
+	// Initialize and start Cron Scheduler
+	scheduler := setupCron()
+	defer scheduler.Stop()
 
 	r := gin.Default()
 
@@ -160,4 +166,22 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func setupCron() *cron.Scheduler {
+	s := cron.NewScheduler()
+
+	// Register Heartbeat Job
+	heartbeatJob := jobs.NewHeartbeatJob()
+	if _, err := s.RegisterJob("0 * * * * *", heartbeatJob); err != nil {
+		log.Printf("⚠️  Failed to register heartbeat job: %v", err)
+	}
+
+	// You can easily add more jobs here:
+	// exampleJob := jobs.NewExampleJob(someService)
+	// s.RegisterJob("0 0 * * * *", exampleJob)
+
+	s.Start()
+	log.Println("⏰ Cron scheduler initialized and started")
+	return s
 }
