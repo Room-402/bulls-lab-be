@@ -42,3 +42,11 @@ func (r *OrderRepository) GetPendingLimitOrders(ctx context.Context) ([]*domain.
 	).Find(&orders).Error
 	return orders, err
 }
+
+func (r *OrderRepository) BatchCancelExpiredOrders(ctx context.Context, status string, cancelledStatus string, now time.Time) (int64, error) {
+	result := r.db.WithContext(ctx).Model(&domain.Order{}).
+		Where("order_status = ? AND expires_at < ?", status, now).
+		Update("order_status", cancelledStatus)
+	
+	return result.RowsAffected, result.Error
+}

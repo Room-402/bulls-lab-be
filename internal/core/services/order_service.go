@@ -64,3 +64,7 @@ func (s *OrderService) GetPendingLimitOrders(ctx context.Context) ([]*domain.Ord
 func (s *OrderService) ExecuteOrder(ctx context.Context, order *domain.Order) error {
 	return s.repo.ExecuteOrder(ctx, order)
 }
+
+func (s *OrderService) CancelExpiredOrders(ctx context.Context) (int64, error) {
+	return s.repo.BatchCancelExpiredOrders(ctx, constants.ORDER_STATUS_PLACED, constants.ORDER_STATUS_CANCELLED, time.Now())
+}
