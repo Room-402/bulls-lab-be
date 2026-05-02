@@ -36,7 +36,52 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *domain.CreateOrderR
 		expiryDate = time.Date(now.Year(), now.Month(), now.Day(), 15, 30, 0, 0, now.Location())
 	}
 
-	// 2. Create Main Order
+	// 2. Prepare SL Order and Validate BEFORE creating any order in DB
+	var slOrder *domain.Order
+	if req.OrderCategory == constants.STOP_LOSS_ORDER_CATEGORY {
+		// Fetch Current Price for validation
+		cmp, err := s.marketService.GetStockPrice(ctx, req.StockTicker)
+		if err != nil {
+			return nil, errors.New("failed to fetch current market price for validation")
+		}
+
+		slOrderType := constants.ORDER_TYPE_SELL
+		if req.OrderType == constants.ORDER_TYPE_SELL {
+			slOrderType = constants.ORDER_TYPE_BUY
+			// Stop Loss Buy must be above Current Price (protecting a short)
+			if req.TriggerPrice <= cmp {
+				return nil, errors.New("STOP_LOSS trigger price must be greater than current market price for a SELL order")
+			}
+		} else {
+			// Stop Loss Sell must be below Current Price (protecting a long)
+			if req.TriggerPrice >= cmp {
+				return nil, errors.New("STOP_LOSS trigger price must be less than current market price for a BUY order")
+			}
+		}
+
+		// Fallback for execution price
+		executionPrice := req.StopLossPrice
+		if executionPrice == 0 {
+			executionPrice = req.Price
+		}
+
+		slOrder = &domain.Order{
+			UserId:        req.UserId,
+			StockTicker:   req.StockTicker,
+			OrderType:     slOrderType,
+			OrderCategory: constants.STOP_LOSS_ORDER_CATEGORY,
+			ProductType:   req.ProductType,
+			Quantity:      req.Quantity,
+			Price:         executionPrice,
+			TriggerPrice:  req.TriggerPrice,
+			OrderStatus:   constants.ORDER_STATUS_PENDING,
+			Active:        true,
+			ExecutionType: req.ExecutionType,
+			ExpiresAt:     expiryDate,
+		}
+	}
+
+	// 3. Create Main Order
 	order := &domain.Order{
 		UserId:        req.UserId,
 		StockTicker:   req.StockTicker,
@@ -56,49 +101,15 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *domain.CreateOrderR
 		return nil, err
 	}
 
-	// 3. Handle STOP_LOSS: create secondary order in PENDING status
-	if req.OrderCategory == constants.STOP_LOSS_ORDER_CATEGORY {
-		// Fetch Current Price for validation
-		cmp, err := s.marketService.GetStockPrice(ctx, req.StockTicker)
-		if err != nil {
-			return nil, errors.New("failed to fetch current market price for validation")
-		}
-
-		slOrderType := constants.ORDER_TYPE_SELL
-		if req.OrderType == constants.ORDER_TYPE_SELL {
-			slOrderType = constants.ORDER_TYPE_BUY
-			// Stop Loss Buy must be above Current Price
-			if req.TriggerPrice <= cmp {
-				return nil, errors.New("STOP_LOSS trigger price must be greater than current market price for a SELL order")
-			}
-		} else {
-			// Stop Loss Sell must be below Current Price
-			if req.TriggerPrice >= cmp {
-				return nil, errors.New("STOP_LOSS trigger price must be less than current market price for a BUY order")
-			}
-		}
-
-		slOrder := &domain.Order{
-			UserId:        req.UserId,
-			StockTicker:   req.StockTicker,
-			OrderType:     slOrderType,
-			OrderCategory: constants.STOP_LOSS_ORDER_CATEGORY,
-			ProductType:   req.ProductType,
-			Quantity:      req.Quantity,
-			Price:         req.StopLossPrice, // Execution price if triggered
-			TriggerPrice:  req.TriggerPrice,  // When to activate
-			OrderStatus:   constants.ORDER_STATUS_PENDING,
-			Active:        true,
-			ExecutionType: req.ExecutionType,
-			ExpiresAt:     expiryDate,
-			ParentOrderId: &order.ID, // Link to parent
-		}
+	// 4. Create Linked SL Order if it was prepared
+	if slOrder != nil {
+		slOrder.ParentOrderId = &order.ID
 		if err := s.repo.Create(ctx, slOrder); err != nil {
-			return order, nil
+			return order, nil // Main order is created, but SL failed
 		}
 	}
 
-	// 4. If it's a market order, execute immediately (non-SL)
+	// 5. Market Execution (for non-SL regular orders)
 	if order.ExecutionType == constants.EXECUTION_TYPE_MARKET && order.OrderCategory != constants.STOP_LOSS_ORDER_CATEGORY {
 		if err := s.repo.ExecuteOrder(ctx, order); err != nil {
 			return nil, err
