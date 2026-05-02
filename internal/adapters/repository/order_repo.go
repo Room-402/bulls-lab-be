@@ -25,7 +25,7 @@ func (r *OrderRepository) Create(ctx context.Context, order *domain.Order) error
 
 func (r *OrderRepository) ExecuteOrder(ctx context.Context, order *domain.Order) error {
 	return r.db.WithContext(ctx).Model(order).Updates(map[string]interface{}{
-		"order_status": constants.ORDER_STATUS_EXECUTED,
+		"order_status": string(constants.OrderStatusExecuted),
 		"active":       false,
 		"updated_at":   time.Now(),
 	}).Error
@@ -36,8 +36,8 @@ func (r *OrderRepository) GetPendingLimitOrders(ctx context.Context) ([]*domain.
 	// Fetch both PLACED (to check price match) and PENDING (to check trigger match)
 	err := r.db.WithContext(ctx).Where(
 		"(order_status = ? OR order_status = ?) AND active = ? AND expires_at > ?",
-		constants.ORDER_STATUS_PLACED,
-		constants.ORDER_STATUS_PENDING,
+		string(constants.OrderStatusPlaced),
+		string(constants.OrderStatusPending),
 		true,
 		time.Now(),
 	).Find(&orders).Error
@@ -52,7 +52,7 @@ func (r *OrderRepository) BatchCancelExpiredOrders(ctx context.Context, status s
 			"active":       false,
 			"updated_at":   time.Now(),
 		})
-	
+
 	return result.RowsAffected, result.Error
 }
 
@@ -65,19 +65,17 @@ func (r *OrderRepository) GetOrdersByTab(ctx context.Context, userID int, tab st
 
 	switch tab {
 	case "open":
-		query = query.Where("created_at >= ? AND order_status = ? AND order_category != ?", 
-			todayStart, constants.ORDER_STATUS_PLACED, constants.GTT_LOSS_ORDER_CATEGORY)
+		query = query.Where("created_at >= ? AND order_status = ? AND order_category != ?",
+			todayStart, string(constants.OrderStatusPlaced), string(constants.GTTOrderCategory))
 	case "history":
-		query = query.Where("created_at >= ? AND order_status IN (?)", 
-			todayStart, []string{constants.ORDER_STATUS_EXECUTED, constants.ORDER_STATUS_CANCELLED})
+		query = query.Where("created_at >= ? AND order_status IN (?)",
+			todayStart, []string{string(constants.OrderStatusExecuted), string(constants.OrderStatusCancelled)})
 	case "gtt":
-		query = query.Where("order_status = ? AND order_category = ?", 
-			constants.ORDER_STATUS_PLACED, constants.GTT_LOSS_ORDER_CATEGORY)
+		query = query.Where("order_status = ? AND order_category = ?",
+			string(constants.OrderStatusPlaced), string(constants.GTTOrderCategory))
 	case "positions":
-		query = query.Where("created_at >= ? AND order_status = ?", 
-			todayStart, constants.ORDER_STATUS_EXECUTED)
-	case "all":
-		query = query.Where("created_at >= ?", todayStart)
+		query = query.Where("created_at >= ? AND order_status = ?",
+			todayStart, string(constants.OrderStatusExecuted))
 	default:
 		// Return all today's orders if no tab specified
 		query = query.Where("created_at >= ?", todayStart)

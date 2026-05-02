@@ -54,16 +54,19 @@ func main() {
 	watchlistHandler := handler.NewWatchlistHandler(watchlistService)
 	// Initialize repository
 	orderRepo := repository.NewOrderRepository(db)
+	holdingRepo := repository.NewStockHoldingRepository(db)
 
 	// Initialize Market Service
 	marketClient := market.NewMarketClient(constants.MARKET_SERVICE_URL)
 
 	// Initialize service
-	orderService := services.NewOrderService(orderRepo, marketClient)
+	orderService := services.NewOrderService(orderRepo, holdingRepo, marketClient)
+	portfolioService := services.NewPortfolioService(holdingRepo)
 
 	// Initialize handlers
 	healthHandler := handler.NewHealthHandler()
 	orderHandler := handler.NewOrderHandler(orderService)
+	portfolioHandler := handler.NewPortfolioHandler(portfolioService)
 
 	// Initialize and start Cron Scheduler
 	cronScheduler := cron.NewScheduler()
@@ -133,6 +136,11 @@ func main() {
 			watchlists.DELETE("/:id", watchlistHandler.DeleteWatchlist)
 			watchlists.POST("/:id/stocks", watchlistHandler.AddStock)
 			watchlists.DELETE("/:id/stocks", watchlistHandler.RemoveStock)
+		}
+
+		portfolio := api.Group("/portfolio")
+		{
+			portfolio.GET("/holdings", portfolioHandler.GetHoldings)
 		}
 	}
 

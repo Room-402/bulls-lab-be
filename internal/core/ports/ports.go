@@ -74,3 +74,15 @@ type WatchlistService interface {
 type MarketService interface {
 	GetStockPrice(ctx context.Context, ticker string) (float64, error)
 }
+
+type StockHoldingRepository interface {
+	CreateHolding(ctx context.Context, holding *domain.StockHolding) error
+	GetHoldingsByUserAndTicker(ctx context.Context, userID int, ticker string) ([]*domain.StockHolding, error)
+	UpdateHoldingQuantity(ctx context.Context, holdingID int, newQuantity int) error
+	CreateSellEntry(ctx context.Context, entry *domain.HoldingSellEntry) error
+	GetHoldingsSummaryByUser(ctx context.Context, userID int) ([]*domain.PortfolioHolding, error)
+}
+
+type PortfolioService interface {
+	GetPortfolioHoldings(ctx context.Context, userID int) ([]*domain.PortfolioHolding, error)
+}
