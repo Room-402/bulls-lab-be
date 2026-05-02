@@ -29,8 +29,8 @@ const (
 )
 
 const (
-	PRODUCT_TYPE_DELIVERY  = "DELIVERY"
-	PRODUCT_TYPE_INTRADAY  = "INTRADAY"
+	PRODUCT_TYPE_DELIVERY = "DELIVERY"
+	PRODUCT_TYPE_INTRADAY = "INTRADAY"
 
-	MARKET_SERVICE_URL = "http://localhost:8000"
+	MARKET_SERVICE_URL = "https://market-service-e03a.onrender.com/"
 )
