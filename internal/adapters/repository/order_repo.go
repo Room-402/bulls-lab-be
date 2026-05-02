@@ -52,7 +52,7 @@ func (r *OrderRepository) BatchCancelExpiredOrders(ctx context.Context, status s
 			"active":       false,
 			"updated_at":   time.Now(),
 		})
-	
+
 	return result.RowsAffected, result.Error
 }
 
@@ -65,19 +65,19 @@ func (r *OrderRepository) GetOrdersByTab(ctx context.Context, userID int, tab st
 
 	switch tab {
 	case "open":
-		query = query.Where("created_at >= ? AND order_status = ? AND order_category != ?", 
+		query = query.Where("created_at >= ? AND order_status = ? AND order_category != ?",
 			todayStart, string(constants.OrderStatusPlaced), string(constants.GTTOrderCategory))
 	case "history":
-		query = query.Where("created_at >= ? AND order_status IN (?)", 
+		query = query.Where("created_at >= ? AND order_status IN (?)",
 			todayStart, []string{string(constants.OrderStatusExecuted), string(constants.OrderStatusCancelled)})
 	case "gtt":
-		query = query.Where("order_status = ? AND order_category = ?", 
+		query = query.Where("order_status = ? AND order_category = ?",
 			string(constants.OrderStatusPlaced), string(constants.GTTOrderCategory))
 	case "positions":
-		query = query.Where("created_at >= ? AND order_status = ?", 
+		query = query.Where("created_at >= ? AND order_status = ?",
 			todayStart, string(constants.OrderStatusExecuted))
 	default:
-		// Return all if no tab specified? Or error? Let's return today's orders
+		// Return all today's orders if no tab specified
 		query = query.Where("created_at >= ?", todayStart)
 	}
 

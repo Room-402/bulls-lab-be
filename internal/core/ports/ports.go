@@ -44,7 +44,7 @@ type OrderService interface {
 	GetPendingLimitOrders(ctx context.Context) ([]*domain.Order, error)
 	ExecuteOrder(ctx context.Context, order *domain.Order) error
 	CancelExpiredOrders(ctx context.Context) (int64, error)
-	GetOrdersByTab(ctx context.Context, userID int, tab string) ([]*domain.Order, error)
+	GetOrdersByTab(ctx context.Context, userID int, tab string) ([]*domain.OrderWithChild, error)
 }
 
 type WatchlistRepository interface {

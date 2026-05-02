@@ -15,9 +15,15 @@ type Order struct {
 	TriggerPrice  float64   `json:"trigger_price" db:"trigger_price"`
 	OrderStatus   string    `json:"order_status" db:"order_status"`
 	Active        bool      `json:"active" db:"active"`
+	ParentOrderId *int      `json:"parent_order_id,omitempty" db:"parent_order_id"`
 	ExpiresAt     time.Time `json:"expires_at" db:"expires_at"`
 	CreatedAt     time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at" db:"updated_at"`
+}
+
+type OrderWithChild struct {
+	Order
+	ChildOrder *Order `json:"child_order,omitempty"`
 }
 
 type CreateOrderRequest struct {
