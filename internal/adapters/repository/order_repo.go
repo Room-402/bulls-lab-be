@@ -76,8 +76,10 @@ func (r *OrderRepository) GetOrdersByTab(ctx context.Context, userID int, tab st
 	case "positions":
 		query = query.Where("created_at >= ? AND order_status = ?", 
 			todayStart, constants.ORDER_STATUS_EXECUTED)
+	case "all":
+		query = query.Where("created_at >= ?", todayStart)
 	default:
-		// Return all if no tab specified? Or error? Let's return today's orders
+		// Return all today's orders if no tab specified
 		query = query.Where("created_at >= ?", todayStart)
 	}
 

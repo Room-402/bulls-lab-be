@@ -91,13 +91,14 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *domain.CreateOrderR
 			Active:        true,
 			ExecutionType: req.ExecutionType,
 			ExpiresAt:     expiryDate,
+			ParentOrderId: &order.ID, // Link to parent
 		}
 		if err := s.repo.Create(ctx, slOrder); err != nil {
 			return order, nil
 		}
 	}
 
-	// 4. If it's a market order, execute immediately
+	// 4. If it's a market order, execute immediately (non-SL)
 	if order.ExecutionType == constants.EXECUTION_TYPE_MARKET && order.OrderCategory != constants.STOP_LOSS_ORDER_CATEGORY {
 		if err := s.repo.ExecuteOrder(ctx, order); err != nil {
 			return nil, err
@@ -119,6 +120,37 @@ func (s *OrderService) CancelExpiredOrders(ctx context.Context) (int64, error) {
 	return s.repo.BatchCancelExpiredOrders(ctx, constants.ORDER_STATUS_PLACED, constants.ORDER_STATUS_CANCELLED, time.Now())
 }
 
-func (s *OrderService) GetOrdersByTab(ctx context.Context, userID int, tab string) ([]*domain.Order, error) {
-	return s.repo.GetOrdersByTab(ctx, userID, tab)
+func (s *OrderService) GetOrdersByTab(ctx context.Context, userID int, tab string) ([]*domain.OrderWithChild, error) {
+	baseOrders, err := s.repo.GetOrdersByTab(ctx, userID, tab)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*domain.OrderWithChild, 0)
+	parentMap := make(map[int]*domain.OrderWithChild)
+
+	orderIds := make([]int, 0)
+	for _, o := range baseOrders {
+		if o.ParentOrderId == nil {
+			owc := &domain.OrderWithChild{Order: *o}
+			result = append(result, owc)
+			parentMap[o.ID] = owc
+			orderIds = append(orderIds, o.ID)
+		}
+	}
+
+	if len(orderIds) > 0 {
+		allUserOrders, err := s.repo.GetOrdersByTab(ctx, userID, "all")
+		if err == nil {
+			for _, o := range allUserOrders {
+				if o.ParentOrderId != nil {
+					if parent, ok := parentMap[*o.ParentOrderId]; ok {
+						parent.ChildOrder = o
+					}
+				}
+			}
+		}
+	}
+
+	return result, nil
 }
