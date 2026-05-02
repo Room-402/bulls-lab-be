@@ -40,17 +40,14 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *domain.CreateOrderR
 	}
 
 	// 2. Prepare SL Order and Validate BEFORE creating any order in DB
-	var slOrder *domain.Order
-	if req.OrderCategory == constants.STOP_LOSS_ORDER_CATEGORY {
+	if req.OrderCategory == string(constants.StopLossOrderCategory) {
 		// Fetch Current Price for validation
 		cmp, err := s.marketService.GetStockPrice(ctx, req.StockTicker)
 		if err != nil {
 			return nil, errors.New("failed to fetch current market price for validation")
 		}
 
-		slOrderType := constants.ORDER_TYPE_SELL
-		if req.OrderType == constants.ORDER_TYPE_SELL {
-			slOrderType = constants.ORDER_TYPE_BUY
+		if req.OrderType == string(constants.OrderTypeSell) {
 			// Stop Loss Buy must be above Current Price (protecting a short)
 			if req.TriggerPrice <= cmp {
 				return nil, errors.New("STOP_LOSS trigger price must be greater than current market price for a SELL order")
@@ -60,27 +57,6 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *domain.CreateOrderR
 			if req.TriggerPrice >= cmp {
 				return nil, errors.New("STOP_LOSS trigger price must be less than current market price for a BUY order")
 			}
-		}
-
-		// Fallback for execution price
-		executionPrice := req.StopLossPrice
-		if executionPrice == 0 {
-			executionPrice = req.Price
-		}
-
-		slOrder = &domain.Order{
-			UserId:        req.UserId,
-			StockTicker:   req.StockTicker,
-			OrderType:     slOrderType,
-			OrderCategory: constants.STOP_LOSS_ORDER_CATEGORY,
-			ProductType:   req.ProductType,
-			Quantity:      req.Quantity,
-			Price:         executionPrice,
-			TriggerPrice:  req.TriggerPrice,
-			OrderStatus:   constants.ORDER_STATUS_PENDING,
-			Active:        true,
-			ExecutionType: req.ExecutionType,
-			ExpiresAt:     expiryDate,
 		}
 	}
 
