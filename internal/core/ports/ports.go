@@ -36,6 +36,7 @@ type OrderRepository interface {
 	ExecuteOrder(ctx context.Context, req *domain.Order) error
 	GetPendingLimitOrders(ctx context.Context) ([]*domain.Order, error)
 	BatchCancelExpiredOrders(ctx context.Context, status string, cancelledStatus string, now time.Time) (int64, error)
+	GetOrdersByTab(ctx context.Context, userID int, tab string) ([]*domain.Order, error)
 }
 
 type OrderService interface {
@@ -43,6 +44,7 @@ type OrderService interface {
 	GetPendingLimitOrders(ctx context.Context) ([]*domain.Order, error)
 	ExecuteOrder(ctx context.Context, order *domain.Order) error
 	CancelExpiredOrders(ctx context.Context) (int64, error)
+	GetOrdersByTab(ctx context.Context, userID int, tab string) ([]*domain.Order, error)
 }
 
 type WatchlistRepository interface {
