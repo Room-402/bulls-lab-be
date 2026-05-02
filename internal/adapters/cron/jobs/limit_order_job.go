@@ -58,13 +58,13 @@ func (j *LimitOrderJob) Run() {
 		}
 
 		// 3. Handle STOP_LOSS trigger (PENDING status)
-		if order.OrderStatus == constants.ORDER_STATUS_PENDING && order.OrderCategory == constants.STOP_LOSS_ORDER_CATEGORY {
+		if order.OrderStatus == string(constants.OrderStatusPending) && order.OrderCategory == string(constants.StopLossOrderCategory) {
 			triggered := false
-			if order.OrderType == constants.ORDER_TYPE_BUY {
+			if order.OrderType == string(constants.OrderTypeBuy) {
 				if currentPrice >= order.TriggerPrice {
 					triggered = true
 				}
-			} else if order.OrderType == constants.ORDER_TYPE_SELL {
+			} else if order.OrderType == string(constants.OrderTypeSell) {
 				if currentPrice <= order.TriggerPrice {
 					triggered = true
 				}
@@ -74,26 +74,26 @@ func (j *LimitOrderJob) Run() {
 				log.Printf("🔔 [LimitOrderJob] STOP_LOSS triggered for order %d (%s at %.2f)",
 					order.ID, order.StockTicker, currentPrice)
 
-				order.OrderStatus = constants.ORDER_STATUS_PLACED
+				order.OrderStatus = string(constants.OrderStatusPlaced)
 			} else {
 				continue
 			}
 		}
 
 		// 4. Handle Execution (PLACED status)
-		if order.OrderStatus == constants.ORDER_STATUS_PLACED {
+		if order.OrderStatus == string(constants.OrderStatusPlaced) {
 			shouldExecute := false
 
 			// Market orders that were triggered or placed
-			if order.ExecutionType == constants.EXECUTION_TYPE_MARKET {
+			if order.ExecutionType == string(constants.ExecutionTypeMarket) {
 				shouldExecute = true
-			} else if order.ExecutionType == constants.EXECUTION_TYPE_LIMIT {
+			} else if order.ExecutionType == string(constants.ExecutionTypeLimit) {
 				// Limit price check
-				if order.OrderType == constants.ORDER_TYPE_BUY {
+				if order.OrderType == string(constants.OrderTypeBuy) {
 					if currentPrice <= order.Price {
 						shouldExecute = true
 					}
-				} else if order.OrderType == constants.ORDER_TYPE_SELL {
+				} else if order.OrderType == string(constants.OrderTypeSell) {
 					if currentPrice >= order.Price {
 						shouldExecute = true
 					}

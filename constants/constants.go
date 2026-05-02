@@ -1,21 +1,34 @@
 package constants
 
+type OrderType string
+type OrderCategory string
+type OrderStatus string
+type ExecutionType string
+
 const (
-	ORDER_TYPE_BUY  = "BUY"
-	ORDER_TYPE_SELL = "SELL"
+	OrderTypeBuy  OrderType = "BUY"
+	OrderTypeSell OrderType = "SELL"
+)
 
-	REGULAR_ORDER_CATEGORY   = "REGULAR"
-	STOP_LOSS_ORDER_CATEGORY = "STOP_LOSS"
-	GTT_LOSS_ORDER_CATEGORY  = "GTT"
+const (
+	RegularOrderCategory  OrderCategory = "REGULAR"
+	StopLossOrderCategory OrderCategory = "STOP_LOSS"
+	GTTOrderCategory      OrderCategory = "GTT"
+)
 
-	ORDER_STATUS_PLACED    = "PLACED"
-	ORDER_STATUS_EXECUTED  = "EXECUTED"
-	ORDER_STATUS_CANCELLED = "CANCELLED"
-	ORDER_STATUS_PENDING   = "PENDING"
+const (
+	OrderStatusPlaced    OrderStatus = "PLACED"
+	OrderStatusExecuted  OrderStatus = "EXECUTED"
+	OrderStatusCancelled OrderStatus = "CANCELLED"
+	OrderStatusPending   OrderStatus = "PENDING"
+)
 
-	EXECUTION_TYPE_MARKET = "MARKET"
-	EXECUTION_TYPE_LIMIT  = "LIMIT"
+const (
+	ExecutionTypeMarket ExecutionType = "MARKET"
+	ExecutionTypeLimit  ExecutionType = "LIMIT"
+)
 
+const (
 	PRODUCT_TYPE_DELIVERY  = "DELIVERY"
 	PRODUCT_TYPE_INTRADAY  = "INTRADAY"
 

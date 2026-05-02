@@ -6,17 +6,20 @@ import (
 	"bulls-lab-be/internal/core/ports"
 	"context"
 	"errors"
+	"fmt"
 	"time"
 )
 
 type OrderService struct {
 	repo          ports.OrderRepository
+	holdingRepo   ports.StockHoldingRepository
 	marketService ports.MarketService
 }
 
-func NewOrderService(repo ports.OrderRepository, marketService ports.MarketService) *OrderService {
+func NewOrderService(repo ports.OrderRepository, holdingRepo ports.StockHoldingRepository, marketService ports.MarketService) *OrderService {
 	return &OrderService{
 		repo:          repo,
+		holdingRepo:   holdingRepo,
 		marketService: marketService,
 	}
 }
@@ -30,7 +33,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *domain.CreateOrderR
 	now := time.Now()
 	var expiryDate time.Time
 
-	if req.OrderCategory == constants.GTT_LOSS_ORDER_CATEGORY {
+	if constants.OrderCategory(req.OrderCategory) == constants.GTTOrderCategory {
 		expiryDate = time.Date(now.Year(), now.Month(), now.Day(), 15, 30, 0, 0, now.Location()).AddDate(1, 0, 0)
 	} else {
 		expiryDate = time.Date(now.Year(), now.Month(), now.Day(), 15, 30, 0, 0, now.Location())
@@ -46,7 +49,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *domain.CreateOrderR
 		Quantity:      req.Quantity,
 		Price:         req.Price,
 		TriggerPrice:  req.TriggerPrice,
-		OrderStatus:   constants.ORDER_STATUS_PLACED,
+		OrderStatus:   string(constants.OrderStatusPlaced),
 		Active:        true,
 		ExecutionType: req.ExecutionType,
 		ExpiresAt:     expiryDate,
@@ -57,16 +60,16 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *domain.CreateOrderR
 	}
 
 	// 3. Handle STOP_LOSS: create secondary order in PENDING status
-	if req.OrderCategory == constants.STOP_LOSS_ORDER_CATEGORY {
+	if constants.OrderCategory(req.OrderCategory) == constants.StopLossOrderCategory {
 		// Fetch Current Price for validation
 		cmp, err := s.marketService.GetStockPrice(ctx, req.StockTicker)
 		if err != nil {
 			return nil, errors.New("failed to fetch current market price for validation")
 		}
 
-		slOrderType := constants.ORDER_TYPE_SELL
-		if req.OrderType == constants.ORDER_TYPE_SELL {
-			slOrderType = constants.ORDER_TYPE_BUY
+		slOrderType := string(constants.OrderTypeSell)
+		if constants.OrderType(req.OrderType) == constants.OrderTypeSell {
+			slOrderType = string(constants.OrderTypeBuy)
 			// Stop Loss Buy must be above Current Price
 			if req.TriggerPrice <= cmp {
 				return nil, errors.New("STOP_LOSS trigger price must be greater than current market price for a SELL order")
@@ -82,12 +85,12 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *domain.CreateOrderR
 			UserId:        req.UserId,
 			StockTicker:   req.StockTicker,
 			OrderType:     slOrderType,
-			OrderCategory: constants.STOP_LOSS_ORDER_CATEGORY,
+			OrderCategory: string(constants.StopLossOrderCategory),
 			ProductType:   req.ProductType,
 			Quantity:      req.Quantity,
 			Price:         req.StopLossPrice, // Execution price if triggered
 			TriggerPrice:  req.TriggerPrice,  // When to activate
-			OrderStatus:   constants.ORDER_STATUS_PENDING,
+			OrderStatus:   string(constants.OrderStatusPending),
 			Active:        true,
 			ExecutionType: req.ExecutionType,
 			ExpiresAt:     expiryDate,
@@ -95,12 +98,12 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *domain.CreateOrderR
 		if err := s.repo.Create(ctx, slOrder); err != nil {
 			return order, nil
 		}
-	}
-
-	// 4. If it's a market order, execute immediately
-	if order.ExecutionType == constants.EXECUTION_TYPE_MARKET && order.OrderCategory != constants.STOP_LOSS_ORDER_CATEGORY {
-		if err := s.repo.ExecuteOrder(ctx, order); err != nil {
-			return nil, err
+	} else {
+		// 4. If it's a market order, execute immediately
+		if constants.ExecutionType(order.ExecutionType) == constants.ExecutionTypeMarket {
+			if err := s.ExecuteOrder(ctx, order); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -112,11 +115,73 @@ func (s *OrderService) GetPendingLimitOrders(ctx context.Context) ([]*domain.Ord
 }
 
 func (s *OrderService) ExecuteOrder(ctx context.Context, order *domain.Order) error {
-	return s.repo.ExecuteOrder(ctx, order)
+	if err := s.repo.ExecuteOrder(ctx, order); err != nil {
+		return err
+	}
+	// Handle post-execution stock holdings logic
+	if err := s.processOrderExecution(ctx, order); err != nil {
+		return fmt.Errorf("failed to process order holdings: %w", err)
+	}
+	return nil
+}
+
+func (s *OrderService) processOrderExecution(ctx context.Context, order *domain.Order) error {
+	if constants.OrderType(order.OrderType) == constants.OrderTypeBuy {
+		holding := &domain.StockHolding{
+			UserId:          order.UserId,
+			StockTicker:     order.StockTicker,
+			CurrentQuantity: order.Quantity,
+			OrderId:         order.ID,
+		}
+		return s.holdingRepo.CreateHolding(ctx, holding)
+	} else if constants.OrderType(order.OrderType) == constants.OrderTypeSell {
+		holdings, err := s.holdingRepo.GetHoldingsByUserAndTicker(ctx, order.UserId, order.StockTicker)
+		if err != nil {
+			return err
+		}
+
+		remainingToSell := order.Quantity
+		for _, holding := range holdings {
+			if remainingToSell <= 0 {
+				break
+			}
+
+			sellQty := holding.CurrentQuantity
+			if remainingToSell < sellQty {
+				sellQty = remainingToSell
+			}
+
+			// Deduct from holding
+			newQty := holding.CurrentQuantity - sellQty
+			err = s.holdingRepo.UpdateHoldingQuantity(ctx, holding.ID, newQty)
+			if err != nil {
+				return err
+			}
+
+			// Create sell entry
+			entry := &domain.HoldingSellEntry{
+				OrderId:        order.ID,
+				StockHoldingId: holding.ID,
+				Quantity:       sellQty,
+			}
+			err = s.holdingRepo.CreateSellEntry(ctx, entry)
+			if err != nil {
+				return err
+			}
+
+			remainingToSell -= sellQty
+		}
+
+		if remainingToSell > 0 {
+			// If not enough inventory
+			return fmt.Errorf("insufficient holdings to sell %d shares of %s", order.Quantity, order.StockTicker)
+		}
+	}
+	return nil
 }
 
 func (s *OrderService) CancelExpiredOrders(ctx context.Context) (int64, error) {
-	return s.repo.BatchCancelExpiredOrders(ctx, constants.ORDER_STATUS_PLACED, constants.ORDER_STATUS_CANCELLED, time.Now())
+	return s.repo.BatchCancelExpiredOrders(ctx, string(constants.OrderStatusPlaced), string(constants.OrderStatusCancelled), time.Now())
 }
 
 func (s *OrderService) GetOrdersByTab(ctx context.Context, userID int, tab string) ([]*domain.Order, error) {
